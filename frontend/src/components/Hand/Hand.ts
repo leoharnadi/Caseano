@@ -10,7 +10,6 @@ export class Hand {
       let score = 0;
       let aces = 0;
       this.Cards.map((card) => {
-        console.log(card);
         if (card.Value === "A") {
           aces++;
           score += 11;

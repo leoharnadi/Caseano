@@ -6,6 +6,7 @@ const CardsContainer = styled.div`
   display: flex;
   gap: 0.3125rem;
   flex-wrap: wrap;
+  min-height: 3.125rem;
 `;
 
 interface CardProps {
