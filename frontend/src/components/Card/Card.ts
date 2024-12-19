@@ -1,16 +1,22 @@
-type Suits = "D" | "C" | "H" | "S";
-type Values = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13;
+const Suits = ["D", "C", "H", "S"] as const;
+const Values = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13] as const;
+type Suit = (typeof Suits)[number];
+type Value = (typeof Values)[number];
 
 export interface Card {
-  Value: Values;
-  Suit: Suits;
+  Value: Value;
+  Suit: Suit;
 }
 
-export function NewCard(suit: Suits, value: Values) {
+function NewCard(suit: Suit, value: Value) {
   const card: Card = {
     Value: value,
     Suit: suit,
   };
 
   return card;
+}
+
+export function GenerateCards() {
+  return Suits.flatMap((suit) => Values.map((value) => NewCard(suit, value)));
 }

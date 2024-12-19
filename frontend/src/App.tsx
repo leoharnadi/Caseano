@@ -1,50 +1,19 @@
 import { createBrowserRouter, RouterProvider } from "react-router";
-
-import { Provider } from "react-redux";
-import { setupStore } from "./store/store";
-
-const store = setupStore();
+import Home from "./pages/Home";
+import Blackjack from "./pages/Blackjack";
 
 function Root() {
-  return (
-    <Provider store={store}>
-      <RouterProvider router={router} />
-    </Provider>
-  );
+  return <RouterProvider router={router} />;
 }
 
 const router = createBrowserRouter([
   {
     path: "/",
-    element: undefined,
-    children: [
-      {
-        element: undefined,
-        children: [
-          {
-            element: undefined,
-            children: [
-              {
-                index: true,
-                element: undefined,
-              },
-              {
-                path: "/transactions",
-                element: undefined,
-              },
-            ],
-          },
-        ],
-      },
-    ],
+    element: <Home />,
   },
   {
-    path: "/login",
-    element: undefined,
-  },
-  {
-    path: "/logout",
-    element: undefined,
+    path: "/blackjack",
+    element: <Blackjack />,
   },
 ]);
 
