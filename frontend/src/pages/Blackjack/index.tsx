@@ -1,7 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Deck } from "../../components/Deck/Deck";
 import { CardsDisplay } from "../../components/Card/CardsDisplay";
-import { Card } from "../../components/Card/Card";
 import styled from "styled-components";
 import { Hand } from "../../components/Hand/Hand";
 
@@ -16,95 +15,84 @@ const ButtonContainer = styled.div`
   gap: 0.625rem;
 `;
 
-function initHands() {
-  const hands: Hand[] = [];
-
-  for (let i = 0; i < playerAmount; i++) {
-    hands.push(new Hand());
-  }
-
-  return hands;
-}
-
-const playerAmount = 3;
+const PLAYER_AMOUNT = 2;
 type Status = "Lost" | "Pending" | "Won";
+
 export default function Blackjack() {
   const [deck, setDeck] = useState(new Deck());
-  const [hands, setHands] = useState(initHands());
+  const [hands, setHands] = useState<Hand[]>(createHands());
   const [score, setScore] = useState(0);
   const [turn, setTurn] = useState(0);
+  const [isFirstTurn, setIsFirstTurn] = useState(true);
 
-  let status: Status = "Pending";
-  if (score > 21) {
-    status = "Lost";
-  }
-  if (score === 21) {
-    status = "Won";
+  const status: Status = score > 21 ? "Lost" : score === 21 ? "Won" : "Pending";
+
+  useEffect(() => {
+    if (isFirstTurn) {
+      dealInitialCards();
+      setIsFirstTurn(false);
+    }
+  }, [isFirstTurn]);
+
+  function createHands(): Hand[] {
+    return Array.from({ length: PLAYER_AMOUNT }, () => new Hand());
   }
 
-  function reset() {
+  function dealInitialCards() {
+    setHands((prevHands) => {
+      const newHands = prevHands.map((hand) => {
+        drawCard(hand);
+        drawCard(hand);
+        return hand;
+      });
+      return [...newHands];
+    });
+  }
+
+  function resetGame() {
     setDeck(new Deck());
-    setHands(initHands());
+    setHands(createHands());
     setScore(0);
     setTurn(0);
+    setIsFirstTurn(true);
   }
 
-  function incrementTurn() {
-    setTurn((prev) => {
-      return (prev + 1) % playerAmount;
+  function drawCard(hand: Hand) {
+    setDeck((prevDeck) => {
+      const drawnCard = prevDeck.Draw();
+      if (!drawnCard) return prevDeck;
+
+      setHands((prevHands) => {
+        hand.Cards.push(drawnCard);
+        setScore(hand.GetScore());
+        return [...prevHands];
+      });
+
+      return { ...prevDeck };
     });
   }
 
-  function clickDraw() {
-    setDeck(() => {
-      drawToHand(hands[turn], deck);
-      incrementTurn();
-      return {
-        ...deck,
-      };
-    });
-  }
-
-  function drawToHand(hand: Hand, deck: Deck) {
-    const drawnCard = deck.Draw();
-
-    if (drawnCard === null) {
-      return;
-    }
-
-    setHands(() => {
-      hands[turn].Cards.push(drawnCard);
-      setScore(hand.GetScore());
-      return [...hands];
-    });
+  function handleDraw() {
+    drawCard(hands[turn]);
+    setTurn((prev) => (prev + 1) % PLAYER_AMOUNT);
   }
 
   function renderHands() {
-    return hands.map((hand, i) => {
-      return (
-        <>
-          <p>{`P` + (i + 1) + ` ${hand.GetScore()}`}</p>
-          <CardsDisplay cards={hand.Cards} />
-        </>
-      );
-    });
+    return hands.map((hand, i) => (
+      <div key={i}>
+        <p>{`P${i + 1}: ${hand.GetScore()}`}</p>
+        <CardsDisplay cards={hand.Cards} />
+      </div>
+    ));
   }
 
   return (
     <ContentContainer>
       <ButtonContainer>
-        <button
-          onClick={() => {
-            status !== "Pending" ? reset() : clickDraw();
-          }}
-        >
+        <button onClick={status !== "Pending" ? resetGame : handleDraw}>
           {status !== "Pending" ? "RESET" : "DRAW"}
         </button>
-        <button
-          onClick={() => {
-            incrementTurn();
-          }}
-        >
+        <button onClick={() => setTurn((prev) => (prev + 1) % PLAYER_AMOUNT)}>
           HOLD
         </button>
         <p>
@@ -114,10 +102,10 @@ export default function Blackjack() {
             ? "YOU LOST"
             : "YOU WON"}
         </p>
-        <p>{turn}</p>
+        <p>Turn: {turn + 1}</p>
       </ButtonContainer>
 
-      {deck.Cards && <CardsDisplay cards={deck.Cards} />}
+      {deck.Cards.length > 0 && <CardsDisplay cards={deck.Cards} />}
       {renderHands()}
     </ContentContainer>
   );
