@@ -3,6 +3,9 @@ import { Deck } from "../../components/Deck/Deck";
 import { CardsDisplay } from "../../components/Card/CardsDisplay";
 import styled from "styled-components";
 import { Hand } from "../../components/Hand/Hand";
+import { DealerStats, PlayerStats } from "./PlayerView";
+import { Player } from "../../components/Player/Player";
+import ActionButton from "./ActionButton";
 
 const ContentContainer = styled.div`
   display: flex;
@@ -16,16 +19,15 @@ const ButtonContainer = styled.div`
 `;
 
 const PLAYER_AMOUNT = 2;
-type Status = "Lost" | "Pending" | "Won";
+export type Status = "PlayerTurn" | "DealerTurn" | "End";
 
 export default function Blackjack() {
   const [deck, setDeck] = useState(new Deck());
-  const [hands, setHands] = useState<Hand[]>(createHands());
-  const [score, setScore] = useState(0);
+  const [dealerHand, setDealerHand] = useState(new Hand());
   const [turn, setTurn] = useState(0);
   const [isFirstTurn, setIsFirstTurn] = useState(true);
-
-  const status: Status = score > 21 ? "Lost" : score === 21 ? "Won" : "Pending";
+  const [status, setStatus] = useState<Status>("PlayerTurn");
+  const [players, setPlayers] = useState<Player[]>(initializePlayers());
 
   useEffect(() => {
     if (isFirstTurn) {
@@ -34,26 +36,61 @@ export default function Blackjack() {
     }
   }, [isFirstTurn]);
 
-  function createHands(): Hand[] {
-    return Array.from({ length: PLAYER_AMOUNT }, () => new Hand());
+  useEffect(() => {
+    if (status !== "PlayerTurn") {
+      return;
+    }
+    const currentPlayer = players[turn];
+    if (currentPlayer.hand.GetScore() >= 21) {
+      endTurn();
+    }
+  }, [players, turn]);
+
+  useEffect(() => {
+    if (status !== "DealerTurn") {
+      return;
+    }
+    if (dealerHand.Cards.length >= 1 && dealerHand.GetScore() < 17) {
+      setTimeout(() => {
+        playDealerTurn();
+      }, 1000);
+    } else if (dealerHand.GetScore() >= 17) {
+      determineWinner();
+    }
+  }, [dealerHand, status]);
+
+  function initializePlayers(): Player[] {
+    return Array.from({ length: PLAYER_AMOUNT }, () => new Player(new Hand()));
   }
 
   function dealInitialCards() {
-    setHands((prevHands) => {
-      const newHands = prevHands.map((hand) => {
-        drawCard(hand);
-        drawCard(hand);
-        return hand;
-      });
-      return [...newHands];
+    setPlayers((prevPlayers) =>
+      prevPlayers.map((player) => {
+        drawCard(player.hand);
+        drawCard(player.hand);
+        player.money -= player.bet;
+        return { ...player, hand: { ...player.hand }, money: player.money };
+      })
+    );
+
+    setDealerHand((prevDealer) => {
+      drawCard(prevDealer);
+      return { ...prevDealer };
     });
   }
 
   function resetGame() {
     setDeck(new Deck());
-    setHands(createHands());
-    setScore(0);
+    setDealerHand(new Hand());
+    setPlayers((prevPlayers) =>
+      prevPlayers.map((player) => ({
+        ...player,
+        hand: new Hand(),
+        result: "",
+      }))
+    );
     setTurn(0);
+    setStatus("PlayerTurn");
     setIsFirstTurn(true);
   }
 
@@ -61,52 +98,96 @@ export default function Blackjack() {
     setDeck((prevDeck) => {
       const drawnCard = prevDeck.Draw();
       if (!drawnCard) return prevDeck;
+      hand.Cards.push(drawnCard);
 
-      setHands((prevHands) => {
-        hand.Cards.push(drawnCard);
-        setScore(hand.GetScore());
-        return [...prevHands];
-      });
+      setPlayers((prevPlayers) =>
+        prevPlayers.map((player) =>
+          player.hand === hand ? { ...player, hand: { ...hand } } : player
+        )
+      );
 
       return { ...prevDeck };
     });
   }
 
-  function handleDraw() {
-    drawCard(hands[turn]);
-    setTurn((prev) => (prev + 1) % PLAYER_AMOUNT);
+  function handlePlayerDraw() {
+    const currentPlayer = players[turn];
+    drawCard(currentPlayer.hand);
   }
 
-  function renderHands() {
-    return hands.map((hand, i) => (
-      <div key={i}>
-        <p>{`P${i + 1}: ${hand.GetScore()}`}</p>
-        <CardsDisplay cards={hand.Cards} />
-      </div>
-    ));
+  function endTurn() {
+    if (turn + 1 >= PLAYER_AMOUNT) {
+      setStatus("DealerTurn");
+      setTurn((prev) => prev + 1);
+    } else {
+      setTurn((prev) => prev + 1);
+    }
+  }
+
+  function playDealerTurn() {
+    setDealerHand((prevDealer) => {
+      const newDealer = { ...prevDealer };
+      drawCard(newDealer);
+      return newDealer;
+    });
+  }
+
+  function determineWinner() {
+    const dealerNatural = dealerHand.HasNatural();
+    const dealerScore = dealerHand.GetScore();
+
+    setPlayers((prevPlayers) =>
+      prevPlayers.map((player) => {
+        const playerNatural = player.hand.HasNatural();
+        const playerScore = player.hand.GetScore();
+        let updatedMoney = player.money;
+        let updatedResult = player.result;
+
+        if (playerNatural) {
+          if (dealerNatural) {
+            updatedMoney += player.bet;
+            updatedResult = "Draw";
+          } else {
+            updatedMoney += player.bet * 2.5;
+            updatedResult = "Natural";
+          }
+        } else if (dealerNatural) {
+          updatedResult = "Lose";
+        } else if (playerScore > 21) {
+          updatedResult = "Bust";
+        } else if (dealerScore > 21 || playerScore > dealerScore) {
+          updatedMoney += player.bet * 2;
+          updatedResult = "Win";
+        } else if (playerScore === dealerScore) {
+          updatedMoney += player.bet;
+          updatedResult = "Draw";
+        } else if (playerScore < dealerScore) {
+          updatedResult = "Lose";
+        }
+
+        return { ...player, money: updatedMoney, result: updatedResult };
+      })
+    );
+    setStatus("End");
   }
 
   return (
     <ContentContainer>
       <ButtonContainer>
-        <button onClick={status !== "Pending" ? resetGame : handleDraw}>
-          {status !== "Pending" ? "RESET" : "DRAW"}
-        </button>
-        <button onClick={() => setTurn((prev) => (prev + 1) % PLAYER_AMOUNT)}>
-          HOLD
-        </button>
-        <p>
-          {status === "Pending"
-            ? "GAME IN PROGRESS"
-            : status === "Lost"
-            ? "YOU LOST"
-            : "YOU WON"}
-        </p>
+        <ActionButton
+          reset={resetGame}
+          draw={handlePlayerDraw}
+          end={endTurn}
+          status={status}
+        />
+        <p>{status}</p>
         <p>Turn: {turn + 1}</p>
       </ButtonContainer>
 
       {deck.Cards.length > 0 && <CardsDisplay cards={deck.Cards} />}
-      {renderHands()}
+
+      <PlayerStats players={players} turn={turn} />
+      <DealerStats hand={dealerHand} isDealerTurn={status === "DealerTurn"} />
     </ContentContainer>
   );
 }

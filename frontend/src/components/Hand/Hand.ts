@@ -3,6 +3,7 @@ import { Card } from "../Card/Card";
 export class Hand {
   Cards: Card[];
   GetScore: () => number;
+  HasNatural: () => boolean;
 
   constructor() {
     this.Cards = [];
@@ -30,6 +31,28 @@ export class Hand {
       }
 
       return score;
+    };
+    this.HasNatural = function (this: Hand) {
+      if (this.Cards.length !== 2) {
+        return false;
+      }
+
+      const card1 = this.Cards[0];
+      const card2 = this.Cards[1];
+
+      const isNatural =
+        (card1.Value === "A" &&
+          (card2.Value === "10" ||
+            card2.Value === "J" ||
+            card2.Value === "Q" ||
+            card2.Value === "K")) ||
+        (card2.Value === "A" &&
+          (card1.Value === "10" ||
+            card1.Value === "J" ||
+            card1.Value === "Q" ||
+            card1.Value === "K"));
+
+      return isNatural;
     };
   }
 }
