@@ -11,6 +11,9 @@ export class Hand {
       let score = 0;
       let aces = 0;
       this.Cards.map((card) => {
+        if (card.isHidden) {
+          return;
+        }
         if (card.Value === "A") {
           aces++;
           score += 11;

@@ -2,6 +2,7 @@ import styled from "styled-components";
 import { CardsDisplay } from "../../components/Card/CardsDisplay";
 import { Hand } from "../../components/Hand/Hand";
 import { Player, Result } from "../../components/Player/Player";
+import { Status } from ".";
 
 const Text = styled.p<{ $isTurn: boolean }>`
   color: ${(p) => p.$isTurn && "green"};
@@ -15,7 +16,6 @@ interface StatsProps {
 }
 
 export function Stats(props: StatsProps) {
-  console.log(props.isTurn);
   function renderText() {
     let text = props.text;
 
@@ -52,15 +52,18 @@ export function PlayerStats(props: PlayerStatsProps) {
 
 interface DealerStatsProps {
   hand: Hand;
-  isDealerTurn: boolean;
+  turn: Status;
 }
 
 export function DealerStats(props: DealerStatsProps) {
+  function renderText() {
+    return `Dealer: ${props.hand.GetScore()}`;
+  }
   return (
     <Stats
-      text={`Dealer: ${props.hand.GetScore()}`}
+      text={renderText()}
       hand={props.hand}
-      isTurn={props.isDealerTurn}
+      isTurn={props.turn === "DealerTurn"}
     />
   );
 }

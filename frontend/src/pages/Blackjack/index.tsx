@@ -75,6 +75,7 @@ export default function Blackjack() {
 
     setDealerHand((prevDealer) => {
       drawCard(prevDealer);
+      drawHiddenCard(prevDealer);
       return { ...prevDealer };
     });
   }
@@ -98,6 +99,24 @@ export default function Blackjack() {
     setDeck((prevDeck) => {
       const drawnCard = prevDeck.Draw();
       if (!drawnCard) return prevDeck;
+      drawnCard.isHidden = false;
+      hand.Cards.push(drawnCard);
+
+      setPlayers((prevPlayers) =>
+        prevPlayers.map((player) =>
+          player.hand === hand ? { ...player, hand: { ...hand } } : player
+        )
+      );
+
+      return { ...prevDeck };
+    });
+  }
+
+  function drawHiddenCard(hand: Hand) {
+    setDeck((prevDeck) => {
+      const drawnCard = prevDeck.Draw();
+      if (!drawnCard) return prevDeck;
+      drawnCard.isHidden = true;
       hand.Cards.push(drawnCard);
 
       setPlayers((prevPlayers) =>
@@ -118,6 +137,11 @@ export default function Blackjack() {
   function endTurn() {
     if (turn + 1 >= PLAYER_AMOUNT) {
       setStatus("DealerTurn");
+      setDealerHand((prevDealer) => {
+        const newDealer = { ...prevDealer };
+        newDealer.Cards[1].isHidden = false;
+        return newDealer;
+      });
       setTurn((prev) => prev + 1);
     } else {
       setTurn((prev) => prev + 1);
@@ -187,7 +211,7 @@ export default function Blackjack() {
       {deck.Cards.length > 0 && <CardsDisplay cards={deck.Cards} />}
 
       <PlayerStats players={players} turn={turn} />
-      <DealerStats hand={dealerHand} isDealerTurn={status === "DealerTurn"} />
+      <DealerStats hand={dealerHand} turn={status} />
     </ContentContainer>
   );
 }

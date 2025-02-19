@@ -22,12 +22,14 @@ type Value = (typeof Values)[number];
 export interface Card {
   Value: Value;
   Suit: Suit;
+  isHidden: boolean;
 }
 
 function NewCard(suit: Suit, value: Value) {
   const card: Card = {
     Value: value,
     Suit: suit,
+    isHidden: true,
   };
 
   return card;
