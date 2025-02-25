@@ -10,7 +10,7 @@ export class Player {
   SetBet: (amount: number) => void;
   constructor(hand: Hand) {
     this.money = 500;
-    this.bet = 100;
+    this.bet = 0;
     this.hand = hand;
     this.result = "";
     this.SetBet = (amount: number) => {

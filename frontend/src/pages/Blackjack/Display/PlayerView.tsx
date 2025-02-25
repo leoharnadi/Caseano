@@ -1,8 +1,8 @@
 import styled from "styled-components";
-import { CardsDisplay } from "../../components/Card/CardsDisplay";
-import { Hand } from "../../components/Hand/Hand";
-import { Player, Result } from "../../components/Player/Player";
-import { Status } from ".";
+import { CardsDisplay } from "../../../components/Card/CardsDisplay";
+import { Hand } from "../../../components/Hand/Hand";
+import { Player, Result } from "../../../components/Player/Player";
+import { Status } from "../useBlackjack";
 
 const Text = styled.p<{ $isTurn: boolean }>`
   color: ${(p) => p.$isTurn && "green"};
