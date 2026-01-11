@@ -3,7 +3,7 @@ import { Deck } from "../../components/Deck/Deck";
 import { Hand } from "../../components/Hand/Hand";
 import { Player } from "../../components/Player/Player";
 
-const PLAYER_AMOUNT = 2;
+const PLAYER_AMOUNT = 3;
 const DEFAULT_BET = 100;
 export type Status = "PlayerTurn" | "DealerTurn" | "End";
 

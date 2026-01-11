@@ -33,22 +33,39 @@ export function Stats(props: StatsProps) {
   );
 }
 
+const PlayerStatsDisplay = styled.div<{ $bottom: number, $left: number }>`
+  position: fixed;
+  left:  ${(p) => p.$left}%;
+  bottom: ${(p) => p.$bottom}%;
+  transform: translate(-50%, 0%);
+`
+
 interface PlayerStatsProps {
   players: Player[];
   turn: number;
 }
 
 export function PlayerStats(props: PlayerStatsProps) {
+  const layout = [[2, 50], [35, 25], [35, 75]]
+
   return props.players.map((player, i) => (
-    <Stats
-      key={i}
-      text={`P${i + 1}: ${player.hand.GetScore()}  |  $${player.money}`}
-      hand={player.hand}
-      result={player.result}
-      isTurn={i === props.turn}
-    />
+    <PlayerStatsDisplay $bottom={layout[i][0]} $left={layout[i][1]}>
+      <Stats
+        key={i}
+        text={`P${i + 1}: ${player.hand.GetScore()}  |  $${player.money}`}
+        hand={player.hand}
+        result={player.result}
+        isTurn={i === props.turn}
+      />
+    </PlayerStatsDisplay>
   ));
 }
+
+const DealerStatsDisplay = styled.div`
+  position: fixed;
+  left: 50%;
+  transform: translate(-50%, 0%);
+`
 
 interface DealerStatsProps {
   hand: Hand;
@@ -60,10 +77,12 @@ export function DealerStats(props: DealerStatsProps) {
     return `Dealer: ${props.hand.GetScore()}`;
   }
   return (
-    <Stats
-      text={renderText()}
-      hand={props.hand}
-      isTurn={props.turn === "DealerTurn"}
-    />
+    <DealerStatsDisplay>
+      <Stats
+        text={renderText()}
+        hand={props.hand}
+        isTurn={props.turn === "DealerTurn"}
+      />
+    </DealerStatsDisplay>
   );
 }
